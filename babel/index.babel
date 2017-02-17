@@ -1,0 +1,260 @@
+let rows = 20;
+let cells = 40;
+let speed = 200;
+
+function updateMatrix(array) {
+  //update the matrix by checking the neighbors and return the updated array
+  let newArray = JSON.parse(JSON.stringify(array));
+  for (let i = 0; i < newArray.length; i++) {
+    for(let j = 0; j < newArray[i].length; j++) {
+      newArray[i][j].currentState = gameRules(newArray[i][j]);
+    }
+  }
+  for (let i = 0; i < newArray.length; i++) {
+    for(let j = 0; j < newArray[i].length; j++) {
+      newArray[i][j].neighborScore = findNeighborsScore(i, j, newArray)
+    }
+  }
+  return newArray
+}
+
+function clearBoard(array) {
+  // clear the cells by setting state to 0 and neighbor score to 0
+  let newArray = JSON.parse(JSON.stringify(array));
+  newArray.map(row => {
+    row.map( cell => {
+      cell.currentState = 0;
+      cell.neighborScore = 0;
+    })
+  })
+  return newArray
+}
+
+function createCells(n) {
+  // create cells
+  let array = []
+  for(let i = 0; i < n; i++) {
+    array.push(null)
+  }
+  return array
+}
+
+function createRandomMatrix(rows, cells) {
+  //create a random matrix with the specified number of rows and cells
+  let matrix = [];
+  let count = 0;
+  for (let i = 0; i < rows; i++) {
+    matrix[i] = createCells(cells);
+    for (let j = 0; j < matrix[i].length; j++) {
+      matrix[i][j] = { cellnumber: count,
+                       currentState: randomCellState(),
+                       neighborScore: undefined,
+                       index: [i,j]
+                     };
+      count++;
+    }
+  }
+  for (let i = 0; i < matrix.length; i++) {
+    for(let j = 0; j < matrix[i].length; j++) {
+      matrix[i][j].neighborScore = findNeighborsScore(i, j, matrix)
+    }
+  }
+  return matrix
+}
+
+function updateNeighbors(matrix) {
+  // update the matrix neighbor score and returns it 
+  for (let i = 0; i < matrix.length; i++) {
+    for(let j = 0; j < matrix[i].length; j++) {
+      matrix[i][j].neighborScore = findNeighborsScore(i, j, matrix)
+    }
+  }
+  return matrix    
+}
+
+function findNeighborsScore(row, col, matrix) {
+  // find the neighbor score 
+  let score = 0;
+  let rowLimit = matrix.length-1;
+  let colLimit = matrix[0].length-1;
+  for (let x = Math.max(0, row-1); x <= Math.min(row+1, rowLimit); x++) {
+    for(let y = Math.max(0, col-1); y <= Math.min(col+1, colLimit); y++) {
+      if(x !== row || y !== col) {
+        score += matrix[x][y].currentState;
+      }
+    }
+  }
+  return score
+}
+
+function gameRules(object) {
+  // get each neighbor sum
+  // if sum is 3, cell becomes alive
+  // if sum is greater than 3, cell dies
+  // if sum is less than 2, cell dies,
+  // anthing else, cell state stays the same
+  if (object.neighborScore === 3) {
+    return 1
+  } else if (object.neighborScore > 3) {
+    return 0
+  } else if (object.neighborScore < 2) {
+    return 0
+  } else {
+    return object.currentState
+  }
+}
+
+function randomCellState() {
+  //random number between 1 and 0
+  let num = Math.floor(Math.random() * 2);
+  return num
+}
+
+function Square(props) {
+  // create a square button to be rendered
+  let currentState = props.object.currentState;
+  let nextState = gameRules(props.object);
+  return (
+    <button className={"cells " + ((currentState > 0)? 'birth':'death')}  
+            id={'cell-' + props.object.cellnumber}
+            value={props.object.index}
+            onClick={() => props.onClick(props.object.index)}
+            >
+    
+    </button>
+  )
+}
+
+class Board extends React.Component {
+  //render the square button
+  renderSquare(item) {
+    return (
+      <Square object={item}
+              onClick={this.props.onClick}
+      />
+    )
+  }
+  render () {
+    return (
+      <div className="gameBoard" id="gameBoard">
+        { this.props.squares.map(row => {
+            return (
+              <div className="boardRow">
+                {row.map(item => {
+                  return(
+                    this.renderSquare(item)
+                  )
+                })}
+              </div>
+            )
+          })
+        }
+      </div>
+    )
+  }
+}
+
+class Game extends React.Component{
+  constructor () {
+    super()
+    this.state = {
+      squares: createRandomMatrix(rows, cells),
+      generation: 0,
+      timer: undefined,
+      isCleared: false,
+      runDisabled: false,
+    }
+  }
+  
+  //check if the component was mounted
+  componentDidMount(){
+    this.setState({
+      timer: this.timerId,
+    })
+    this.timerId = setInterval(() => this.generate(), speed);
+  }
+  // generate cells
+  generate() {
+    this.setState({
+      squares: updateMatrix(this.state.squares),
+      generation: this.state.generation + 1,
+    })
+  }
+  //click handler for each individual cells
+  handleClick(index){
+    console.log('click handler')
+    let i = index[0];
+    let j = index[1];
+    let newState = this.state.squares
+    let cellState = (!this.state.squares[i][j].currentState)? 1:0;
+    newState[i][j].currentState = cellState;
+    if (this.state.isCleared) {
+      this.setState({
+        squares: newState
+      })      
+    }
+  }
+  // handler for the clear button
+  handleClear() {
+    clearInterval(this.timerId);
+    this.setState({
+      squares: clearBoard(this.state.squares),
+      generation: 0,
+      isCleared: true,
+    })
+  }
+  
+  handleRun() {
+    // run and render, set iscleared to false
+    clearInterval(this.timerId);
+    let matrix = updateNeighbors(this.state.squares)
+    this.setState({
+      squares: matrix,
+      timer: this.timerId,
+      isCleared: false,
+    })
+    this.timerId = setInterval(() => this.generate(), speed);
+  }
+  handlePause() {
+    //stop renderings
+    clearInterval(this.timerId);
+  }
+  //handler for the random button
+  handleRandom() {
+    clearInterval(this.timerId)
+    let matrix = createRandomMatrix(rows, cells)
+    this.setState({
+      squares: matrix,
+      generation: 0,
+      isCleared: false,
+    })
+    this.timerId = setInterval(() => this.generate(), speed);
+  }
+  
+  render () {
+    return (
+    <div>
+      <h1 className="app-heading">Conway's Game of Life</h1>
+      <div className="generation-text">Generation:
+        <span className="generation">{this.state.generation}</span>
+      </div>
+      
+      <div className="outerboard-div">
+        <Board squares={this.state.squares}
+               onClick={this.handleClick.bind(this)} />
+      </div>
+        
+      <div className="buttonsRow">
+        <button className="buttons" onClick= {() => this.handleRun() } id="run-btn">Start</button>
+        <button className="buttons" onClick={() => this.handlePause() } id="pause-btn">Pause</button>
+        <button className="buttons" onClick={() => this.handleClear() } id="clear-btn">Clear</button>
+        <button className="buttons" onClick={() => this.handleRandom() } id="random-btn">Random</button>
+      </div>
+    </div>
+    )
+  }
+}
+
+
+ReactDOM.render(<Game />, document.getElementById('container'))
+

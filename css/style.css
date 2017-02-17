@@ -1,0 +1,68 @@
+@import url('http://fonts.googleapis.com/css?family=Cookie');
+@import url('http://fonts.googleapis.com/css?family=Orbitron');
+
+body{
+  background-image: radial-gradient(#4c4c4c,#111111)
+}
+
+.app-heading{
+  color: white;
+  text-align: center;
+  font-size: 44px;
+  font-family: 'Cookie',serif;
+}
+
+.cells {
+  height: 18px;
+  color: white;
+  border-color: #4c4c4c;
+  
+  margin: 0px;
+}
+
+.birth {
+  background-color: #00e500;
+}
+.death {
+  background-color: black;
+}
+
+.generation-text{
+  text-align: center;
+  font-size: 20px;
+  color: white;
+  margin-bottom: 15px;
+  font-family: 'Orbitron', serif; 
+}
+
+.generation{
+  margin-left: 20px;
+  text-align: center;
+  font-size: 20px;
+  color: red;
+  font-family: 'Orbitron', serif; 
+}
+
+.buttonsRow{
+  text-align: center;
+}
+
+.gameBoard{
+  text-align: center;
+}
+
+.boardRow{
+  margin: auto;
+  padding: 0px;
+}
+
+.buttons {
+  margin: 8px;
+  border: 3px solid grey;
+  background-color: #4c4c4c;
+  color: white;
+  font-family: 'Orbitron', serif; 
+}
+button:focus {
+  outline: 0;
+}
